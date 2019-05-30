@@ -626,6 +626,13 @@ class FormattedExcinfo(object):
         """ return formatted and marked up source lines. """
         import _pytest._code
 
+        # Traceback lineno is zero-based. We want one-based.
+        lineno_start = excinfo._traceback[0].lineno + 1 - line_index
+        lineno_width = len(str(
+            # This is the highest number we'll print.
+            excinfo._traceback[0].lineno
+        ))
+
         lines = []
         if source is None or line_index >= len(source.lines):
             source = _pytest._code.Source("???")
@@ -636,9 +643,13 @@ class FormattedExcinfo(object):
         if short:
             lines.append(space_prefix + source.lines[line_index].strip())
         else:
-            for line in source.lines[:line_index]:
-                lines.append(space_prefix + line)
-            lines.append(self.flow_marker + "   " + source.lines[line_index])
+            for i, line in enumerate(source.lines[:line_index]):
+                lineno = str(lineno_start + i).rjust(lineno_width)
+                lines.append(f"{lineno}" + space_prefix + line)
+            lines.append(
+                self.flow_marker + " " * (lineno_width + 3)
+                + source.lines[line_index]
+            )
             for line in source.lines[line_index + 1 :]:
                 lines.append(space_prefix + line)
         if excinfo is not None:
@@ -650,8 +661,12 @@ class FormattedExcinfo(object):
         lines = []
         indent = " " * indent
         # get the real exception information out
+        lineno_width = len(str(
+            # This is the highest number we'll print.
+            excinfo._traceback[0].lineno
+        ))
         exlines = excinfo.exconly(tryshort=True).split("\n")
-        failindent = self.fail_marker + indent[1:]
+        failindent = self.fail_marker + " " * lineno_width + indent[1:]
         for line in exlines:
             lines.append(failindent + line)
             if not markall:
