@@ -871,7 +871,27 @@ class AssertionRewriter(ast.NodeVisitor):
             raise_ = ast.Raise(exc, None)
         else:
             raise_ = ast.Raise(exc, None, None)
-        body.append(raise_)
+        try_ = ast.Try(
+            [raise_],
+            [
+                ast.ExceptHandler(
+                    ast.Name("AssertionError", ast.Load()),
+                    "e",
+                    [
+                        ast.Expr(ast.Call(
+                            ast.Name("print", ast.Load()),
+                            [
+                                ast.Name("e", ast.Load()),
+                            ],
+                            [],
+                        )),
+                    ],
+                ),
+            ],
+            [],
+            [],
+        )
+        body.append(try_)
         # Clear temporary variables by setting them to None.
         if self.variables:
             variables = [ast.Name(name, ast.Store()) for name in self.variables]

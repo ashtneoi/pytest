@@ -626,12 +626,16 @@ class FormattedExcinfo(object):
         """ return formatted and marked up source lines. """
         import _pytest._code
 
-        # Traceback lineno is zero-based. We want one-based.
-        lineno_start = excinfo._traceback[0].lineno + 1 - line_index
-        lineno_width = len(str(
-            # This is the highest number we'll print.
-            excinfo._traceback[0].lineno
-        ))
+        if excinfo is None:
+            lineno_start = -1
+            lineno_width = 0
+        else:
+            # Traceback lineno is zero-based. We want one-based.
+            lineno_start = excinfo._traceback[0].lineno + 1 - line_index
+            lineno_width = len(str(
+                # This is the highest number we'll print.
+                excinfo._traceback[0].lineno
+            ))
 
         lines = []
         if source is None or line_index >= len(source.lines):
@@ -661,10 +665,13 @@ class FormattedExcinfo(object):
         lines = []
         indent = " " * indent
         # get the real exception information out
-        lineno_width = len(str(
-            # This is the highest number we'll print.
-            excinfo._traceback[0].lineno
-        ))
+        if excinfo is None:
+            lineno_width = 0
+        else:
+            lineno_width = len(str(
+                # This is the highest number we'll print.
+                excinfo._traceback[0].lineno
+            ))
         exlines = excinfo.exconly(tryshort=True).split("\n")
         failindent = self.fail_marker + " " * lineno_width + indent[1:]
         for line in exlines:
